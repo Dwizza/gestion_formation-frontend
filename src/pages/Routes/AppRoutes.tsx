@@ -1,5 +1,5 @@
 // src/pages/Routes/AppRoutes.tsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { SidebarProvider } from '../../contexts/SidebarContext';
