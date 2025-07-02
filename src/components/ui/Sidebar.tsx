@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { 
   ChevronLeft, 
   ChevronRight,
@@ -26,6 +27,9 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
   const { isExpanded, toggleSidebar } = useSidebar();
   const { user, logout } = useAuth();
   const location = useLocation();
+  
+  // Hook pour les notifications
+  const { stats } = useNotifications();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -75,7 +79,8 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
           icon: <Bell size={20} />,
           title: 'Notifications',
           path: '/admin/notifications',
-          color: '#DC2626'
+          color: '#DC2626',
+          badge: stats.unread > 0 ? stats.unread : undefined // Only show badge when there are unread notifications
         }
       ];
     } else {
@@ -174,7 +179,7 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.background = 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%)';
-          e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+          e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
         }}
         aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
       >
@@ -344,7 +349,7 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       {/* Navigation */}
       <nav style={{ marginTop: '16px', flex: 1, padding: '0 12px' }}>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const active = isActive(item.path);
             return (
               <li key={item.path}>
@@ -399,8 +404,30 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
                   )}
                   
                   {/* Icon */}
-                  <div style={{ color: active ? 'white' : item.color, flexShrink: 0 }}>
+                  <div style={{ color: active ? 'white' : item.color, flexShrink: 0, position: 'relative' }}>
                     {item.icon}
+                    {/* Badge pour les notifications non lues */}
+                    {item.badge && item.badge > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-6px',
+                        right: '-6px',
+                        background: '#EF4444',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+                        border: '2px solid #7F1D1D'
+                      }}>
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </div>
+                    )}
                   </div>
                   
                   {isExpanded && (
@@ -411,7 +438,11 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
                           fontWeight: '500',
                           fontSize: '14px',
                           transition: 'all 0.2s ease-in-out',
-                          textShadow: active ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none'
+                          textShadow: active ? '0 1px 2px rgba(0, 0, 0, 0.3)' : 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          flex: 1
                         }}
                       >
                         {item.title}

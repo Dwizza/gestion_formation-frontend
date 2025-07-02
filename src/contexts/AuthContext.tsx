@@ -159,7 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     try {
       // Real API call to backend
-      console.log('kifach lblan')
+      
       const response = await api.post('/auth/login', { email, password });
       console.log('Login response:', response.data);
 

@@ -38,7 +38,7 @@ export interface Learner {
   id: string;
   name: string;
   email: string;
-  joinDate: date;
+  joinDate: Date;
   phone: string;
   address?: string;
   registrationDate: string;
@@ -80,15 +80,32 @@ export interface Payment {
   notes?: string;
 }
 
-// Notification types
+// Notification types - Interface pour les notifications du backend
 export interface Notification {
-  id: string;
-  title: string;
+  id: number;
+  titre: string; // Titre de la notification
+  message: string; // Contenu du message
+  apprenantId: number; // ID de l'apprenant destinataire
+  type: 'PAYMENT' | 'ATTENDANCE' | 'GENERAL' | 'REMINDER' | 'URGENT'; // Type de notification
+  dateCreation: string; // Date de création (ISO string)
+  dateEnvoi?: string; // Date d'envoi (optionnelle)
+  lu: number; // Statut de lecture (1 = lue, 0 = non lue) - correspond à la DB
+  urgente: boolean; // Notification urgente ou normale
+  statut: 'ENVOYE' | 'EN_ATTENTE' | 'ECHEC'; // Statut d'envoi
+}
+
+// Interface pour l'affichage des notifications dans l'admin
+export interface NotificationWithLearner {
+  id: number;
+  titre: string;
   message: string;
-  recipientId: string;
-  recipientName: string;
-  recipientEmail: string;
-  type: 'payment' | 'attendance' | 'general';
-  date: string;
-  status: 'sent' | 'failed' | 'pending';
+  apprenantId: number;
+  apprenantNom?: string; // Nom de l'apprenant (si disponible)
+  apprenantEmail?: string; // Email de l'apprenant (si disponible)
+  type: string;
+  dateCreation: string;
+  dateEnvoi?: string;
+  lu: boolean | number; // Accepte les deux formats: boolean (API) ou number (DB)
+  urgente: boolean;
+  statut: string;
 }

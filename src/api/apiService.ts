@@ -1,5 +1,6 @@
 // src/services/apiService.ts
 import { api } from '../contexts/AuthContext';
+import type { Notification, NotificationWithLearner } from '../models/types';
 
 // Define TypeScript interfaces for better type safety
 interface Formation {
@@ -393,7 +394,7 @@ export const presenceAPI = {
         }
         
         // Filter attendance for groups that belong to this trainer
-        const trainerGroupIds = trainerGroups.map(group => group.id);
+        const trainerGroupIds = trainerGroups.map((group: any) => group.id);
         const trainerAttendance = allPresence.filter((record: AttendanceRecord) => 
           record.groupeId && trainerGroupIds.includes(record.groupeId)
         );
@@ -536,6 +537,107 @@ export const renderAttendanceList = () => {
 };
 
 // Export interfaces for use in components
+// =============================================
+// NOTIFICATION SERVICES - Services pour gérer les notifications
+// =============================================
+
+// Service pour récupérer toutes les notifications
+export const getAllNotifications = async (): Promise<Notification[]> => {
+  try {
+    const response = await api.get('/notifications');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all notifications:', error);
+    throw error;
+  }
+};
+
+// Service pour récupérer une notification par ID
+export const getNotificationById = async (id: number): Promise<Notification> => {
+  try {
+    const response = await api.get(`/notifications/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notification ${id}:`, error);
+    throw error;
+  }
+};
+
+// Service pour récupérer les notifications d'un apprenant spécifique
+export const getNotificationsByLearner = async (apprenantId: number): Promise<Notification[]> => {
+  try {
+    const response = await api.get(`/notifications/apprenant/${apprenantId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notifications for learner ${apprenantId}:`, error);
+    throw error;
+  }
+};
+
+// Service pour récupérer les notifications non lues d'un apprenant
+export const getUnreadNotificationsByLearner = async (apprenantId: number): Promise<Notification[]> => {
+  try {
+    const response = await api.get(`/notifications/apprenant/${apprenantId}/non-lues`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching unread notifications for learner ${apprenantId}:`, error);
+    throw error;
+  }
+};
+
+// Service pour récupérer les notifications par type
+export const getNotificationsByType = async (type: string): Promise<Notification[]> => {
+  try {
+    const response = await api.get(`/notifications/type/${type}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notifications of type ${type}:`, error);
+    throw error;
+  }
+};
+
+// Service pour récupérer les notifications urgentes
+export const getUrgentNotifications = async (): Promise<Notification[]> => {
+  try {
+    const response = await api.get('/notifications/urgentes');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching urgent notifications:', error);
+    throw error;
+  }
+};
+
+// Service pour marquer une notification comme lue (endpoint corrigé)
+export const markNotificationAsRead = async (id: number): Promise<void> => {
+  try {
+    await api.patch(`/notifications/${id}/lire`);
+  } catch (error) {
+    console.error(`Error marking notification ${id} as read:`, error);
+    throw error;
+  }
+};
+
+// Service pour compter les notifications d'un apprenant
+export const getNotificationCountByLearner = async (apprenantId: number): Promise<number> => {
+  try {
+    const response = await api.get(`/notifications/apprenant/${apprenantId}/count`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notification count for learner ${apprenantId}:`, error);
+    throw error;
+  }
+};
+
+// Service pour envoyer un rappel de paiement à un apprenant
+export const sendPaymentReminder = async (apprenantId: number): Promise<void> => {
+  try {
+    await api.post(`/notifications/paiement/rappel/${apprenantId}`);
+  } catch (error) {
+    console.error(`Error sending payment reminder to learner ${apprenantId}:`, error);
+    throw error;
+  }
+};
+
 export type { 
   Formation, 
   Groupe, 
@@ -543,5 +645,7 @@ export type {
   Payment, 
   User, 
   Session, 
-  AttendanceRecord 
+  AttendanceRecord,
+  Notification,
+  NotificationWithLearner
 };
