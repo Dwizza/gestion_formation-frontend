@@ -26,7 +26,7 @@ const PaymentReminderButton: React.FC<PaymentReminderButtonProps> = ({
         onSuccess();
       }
     } catch (error) {
-      const errorMessage = `Erreur lors de l'envoi du rappel de paiement`;
+      const errorMessage = `Error sending payment reminder`;
       console.error('Error sending payment reminder:', error);
       
       if (onError) {
@@ -48,12 +48,12 @@ const PaymentReminderButton: React.FC<PaymentReminderButtonProps> = ({
       {sending ? (
         <>
           <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-          Envoi...
+          Sending...
         </>
       ) : (
         <>
           <Send className="h-4 w-4 mr-1" />
-          Rappel de paiement
+          Payment Reminder
         </>
       )}
     </Button>

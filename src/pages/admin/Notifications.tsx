@@ -23,8 +23,9 @@ const Notifications: React.FC = () => {
     error,
     stats,
     loadAllNotifications,
-    loadNotificationsByType,
-    loadUrgentNotifications,
+    filterByTypeLocally,
+    filterUrgentLocally,
+    clearFilters,
     markAsReadLocally
   } = useNotifications();
 
@@ -35,30 +36,25 @@ const Notifications: React.FC = () => {
   const [showReadNotifications, setShowReadNotifications] = useState(false); // New state to show/hide read notifications
 
   // Load notifications on startup
-  // useEffect(() => {
-  //   loadNotifications();
-  // }, []);
+  useEffect(() => {
+    loadAllNotifications();
+  }, []);
 
-  // Function to load notifications based on the selected filter
-  const loadNotifications = async () => {
-    try {
-      if (selectedFilter === 'urgent') {
-        await loadUrgentNotifications();
-
-      } else if (selectedFilter === 'type' && selectedType) {
-        await loadNotificationsByType(selectedType);
-      } else {
-        await loadAllNotifications();
-      }
-    } catch (err) {
-      console.error('Error loading notifications:', err);
+  // Function to handle filter changes (using local filtering now)
+  const handleFilterChange = (filterType: 'all' | 'urgent' | 'type', value?: string) => {
+    setSelectedFilter(filterType);
+    
+    if (filterType === 'all') {
+      clearFilters();
+      setSelectedType('');
+    } else if (filterType === 'urgent') {
+      filterUrgentLocally(true);
+      setSelectedType('');
+    } else if (filterType === 'type' && value) {
+      filterByTypeLocally(value);
+      setSelectedType(value);
     }
   };
-
-  // Reload notifications when the filter changes
-  useEffect(() => {
-    loadNotifications();
-  }, []);
 
   // Function to mark a notification as read
   const handleMarkAsRead = async (id: number) => {
@@ -73,8 +69,8 @@ const Notifications: React.FC = () => {
       // from the list if showReadNotifications is false
     } catch (err) {
       console.error('Error marking notification as read:', err);
-      // In case of an error, reload the data to restore the correct state
-      loadNotifications();
+      // In case of an error, reload all notifications to restore the correct state
+      loadAllNotifications();
     }
   };
 
@@ -162,7 +158,7 @@ const Notifications: React.FC = () => {
             <Button
               variant={selectedFilter === 'all' ? 'primary' : 'secondary'}
               size="sm"
-              onClick={() => setSelectedFilter('all')}
+              onClick={() => handleFilterChange('all')}
             >
               <Filter className="h-4 w-4 mr-1" />
               All
@@ -170,7 +166,7 @@ const Notifications: React.FC = () => {
             <Button
               variant={selectedFilter === 'urgent' ? 'primary' : 'secondary'}
               size="sm"
-              onClick={() => setSelectedFilter('urgent')}
+              onClick={() => handleFilterChange('urgent')}
             >
               <AlertTriangle className="h-4 w-4 mr-1" />
               Urgent
@@ -183,26 +179,22 @@ const Notifications: React.FC = () => {
             value={selectedFilter === 'type' ? selectedType : ''}
             onChange={(e) => {
               if (e.target.value) {
-                setSelectedFilter('type');
-                setSelectedType(e.target.value);
+                handleFilterChange('type', e.target.value);
               } else {
-                setSelectedFilter('all');
-                setSelectedType('');
+                handleFilterChange('all');
               }
             }}
           >
             <option value="">All Types</option>
             <option value="PAYMENT">Payment</option>
             <option value="ATTENDANCE">Attendance</option>
-            <option value="GENERAL">General</option>
-            <option value="REMINDER">Reminder</option>
           </select>
 
           {/* Reload button */}
           <Button
             variant="secondary"
             size="sm"
-            onClick={loadNotifications}
+            onClick={loadAllNotifications}
           >
             Refresh
           </Button>

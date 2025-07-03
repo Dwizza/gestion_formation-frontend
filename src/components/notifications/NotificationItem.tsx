@@ -46,11 +46,11 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   // Fonction pour obtenir le texte du type en français
   const getTypeText = (type: string) => {
     switch (type) {
-      case 'PAYMENT': return 'Paiement';
-      case 'ATTENDANCE': return 'Présence';
+      case 'PAYMENT': return 'Payment';
+      case 'ATTENDANCE': return 'Attendance';
       case 'URGENT': return 'Urgent';
-      case 'REMINDER': return 'Rappel';
-      case 'GENERAL': return 'Général';
+      case 'REMINDER': return 'Reminder';
+      case 'GENERAL': return 'General';
       default: return type;
     }
   };
@@ -129,7 +129,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 
             {notification.dateEnvoi && (
               <div className="flex items-center gap-1 text-gray-500">
-                <span>Envoyé: {formatDate(notification.dateEnvoi)}</span>
+                <span>Sent: {formatDate(notification.dateEnvoi)}</span>
               </div>
             )}
           </div>
@@ -145,7 +145,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
               className="whitespace-nowrap"
             >
               <Eye className="h-4 w-4 mr-1" />
-              Marquer comme lue
+              Mark as read
             </Button>
           )}
         </div>
