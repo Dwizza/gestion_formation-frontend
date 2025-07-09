@@ -58,9 +58,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   // Fonction pour obtenir le texte du statut en français
   const getStatusText = (statut: string) => {
     switch (statut) {
-      case 'ENVOYE': return 'Envoyé';
-      case 'EN_ATTENTE': return 'En attente';
-      case 'ECHEC': return 'Échec';
+      case 'ENVOYE': return 'Sent';
+      case 'EN_ATTENTE': return 'Pending';
+      case 'ECHEC': return 'Failed';
       default: return statut;
     }
   };
