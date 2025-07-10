@@ -16,7 +16,8 @@ import {
   Clock,
   Settings,
   LogOut,
-  GraduationCap
+  GraduationCap,
+  AlertTriangle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -76,6 +77,12 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
           color: '#EF4444'
         },
         {
+          icon: <AlertTriangle size={20} />,
+          title: 'Overdue Payments',
+          path: '/admin/overdue-payments',
+          color: '#DC2626'
+        },
+        {
           icon: <Bell size={20} />,
           title: 'Notifications',
           path: '/admin/notifications',
@@ -130,7 +137,10 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
         transition: 'all 0.3s ease-in-out',
         boxShadow: '0 25px 50px -12px rgba(139, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
         position: 'relative',
-        borderRight: '1px solid rgba(220, 38, 38, 0.3)'
+        borderRight: '1px solid rgba(220, 38, 38, 0.3)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
       }}
     >
       {/* Decorative shine overlay */}
@@ -158,28 +168,33 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       <button 
         style={{
           position: 'absolute',
-          right: '-16px',
-          top: '32px',
+          right: isExpanded ? '8px' : '22px',
+          bottom: '80px',
           background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%)',
           color: 'white',
           borderRadius: '50%',
-          padding: '8px',
-          boxShadow: '0 10px 25px -5px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-          zIndex: 20,
+          padding: '10px',
+          boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+          zIndex: 1000,
           border: '2px solid rgba(239, 68, 68, 0.3)',
           cursor: 'pointer',
-          transition: 'all 0.2s ease-in-out'
+          transition: 'all 0.2s ease-in-out',
+          width: '36px',
+          height: '36px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         onClick={toggleSidebar}
         onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.transform = 'scale(1.1)';
           e.currentTarget.style.background = 'linear-gradient(135deg, #B91C1C 0%, #991B1B 50%, #7F1D1D 100%)';
-          e.currentTarget.style.boxShadow = '0 15px 35px -5px rgba(220, 38, 38, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(220, 38, 38, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.background = 'linear-gradient(135deg, #DC2626 0%, #B91C1C 50%, #991B1B 100%)';
-          e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
         }}
         aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
       >
@@ -189,10 +204,10 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       {/* Branding */}
       <div 
         style={{
-          padding: '24px',
+          padding: isExpanded ? '20px 24px' : '16px 12px',
           borderBottom: '1px solid rgba(220, 38, 38, 0.3)',
-          marginBottom: '8px',
-          background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, transparent 100%)'
+          background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, transparent 100%)',
+          flexShrink: 0
         }}
       >
         <div 
@@ -200,7 +215,7 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
             display: 'flex',
             justifyContent: isExpanded ? 'flex-start' : 'center',
             alignItems: 'center',
-            marginBottom: '8px'
+            marginBottom: isExpanded ? '8px' : '4px'
           }}
         >
           <div 
@@ -259,10 +274,11 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       {/* User info */}
       <div 
         style={{
-          padding: '16px',
+          padding: isExpanded ? '12px 16px' : '8px 12px',
           borderBottom: '1px solid rgba(220, 38, 38, 0.3)',
           display: 'flex',
-          justifyContent: isExpanded ? 'flex-start' : 'center'
+          justifyContent: isExpanded ? 'flex-start' : 'center',
+          flexShrink: 0
         }}
       >
         {isExpanded ? (
@@ -347,8 +363,22 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       </div>
       
       {/* Navigation */}
-      <nav style={{ marginTop: '16px', flex: 1, padding: '0 12px' }}>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <nav style={{ 
+        marginTop: '8px', 
+        flex: 1, 
+        padding: '0 12px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        minHeight: 0
+      }}>
+        <ul style={{ 
+          listStyle: 'none', 
+          padding: 0, 
+          margin: 0, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '6px' 
+        }}>
           {navItems.map((item) => {
             const active = isActive(item.path);
             return (
@@ -358,7 +388,7 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '12px 16px',
+                    padding: isExpanded ? '10px 14px' : '10px',
                     borderRadius: '12px',
                     textDecoration: 'none',
                     transition: 'all 0.2s ease-in-out',
@@ -465,7 +495,15 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
       </nav>
       
       {/* Logout button */}
-      <div style={{ padding: '16px', borderTop: '1px solid rgba(220, 38, 38, 0.3)' }}>
+      <div style={{ 
+        padding: isExpanded ? '12px 16px' : '8px 12px', 
+        borderTop: '1px solid rgba(220, 38, 38, 0.3)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexShrink: 0,
+        marginTop: 'auto'
+      }}>
         <button
           onClick={logout}
           style={{
@@ -479,14 +517,16 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
             border: '1px solid rgba(220, 38, 38, 0.3)',
             cursor: 'pointer',
             padding: isExpanded ? '12px 16px' : '12px',
-            width: isExpanded ? '100%' : 'auto',
-            justifyContent: isExpanded ? 'flex-start' : 'center',
-            margin: isExpanded ? '0' : '0 auto'
+            width: isExpanded ? '100%' : '48px',
+            height: isExpanded ? 'auto' : '48px',
+            justifyContent: 'center',
+            maxWidth: isExpanded ? '100%' : '48px',
+            overflow: 'hidden'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
+            e.currentTarget.style.transform = isExpanded ? 'scale(1.02)' : 'scale(1.05)';
             e.currentTarget.style.background = 'linear-gradient(135deg, #B91C1C 0%, #991B1B 50%, #7F1D1D 100%)';
-            e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+            e.currentTarget.style.boxShadow = '0 15px 30px -5px rgba(220, 38, 38, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'scale(1)';

@@ -6,6 +6,7 @@ import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import { paiementAPI, apprenantAPI } from '../../api/apiService';
 import { api } from '../../contexts/AuthContext';
+import axios from 'axios';
 import { Search, Plus, Edit, Trash2, Filter, Calendar, AlertCircle } from 'lucide-react';
 
 interface Payment {
@@ -53,15 +54,37 @@ const Payments: React.FC = () => {
   const fetchPayments = async () => {
     setLoading(true);
     try {
+      console.log('🔄 Fetching payments from API...');
+      console.log('🌐 Making request to: /api/paiements');
+      
       const response = await paiementAPI.getAll();
+      console.log('📥 Raw API response:', response);
+      console.log('📊 Response data:', response.data);
+      console.log('📋 Response status:', response.status);
+      
       if (Array.isArray(response.data)) {
         setPayments(response.data);
+        console.log('✅ Payments loaded successfully:', response.data.length, 'payments');
       } else {
-        console.error('Unexpected payment data format:', response.data);
+        console.error('❌ Unexpected payment data format:', response.data);
         setPayments([]);
       }
-    } catch (error) {
-      console.error('Failed to fetch payments:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch payments - Full error:', error);
+      
+      if (error.response) {
+        console.error('📡 Error response status:', error.response.status);
+        console.error('📡 Error response data:', error.response.data);
+        console.error('📡 Error response headers:', error.response.headers);
+        console.error('📡 Request URL was:', error.config?.url);
+        console.error('📡 Request method was:', error.config?.method);
+        console.error('📡 Request headers were:', error.config?.headers);
+      } else if (error.request) {
+        console.error('📡 No response received:', error.request);
+      } else {
+        console.error('📡 Error message:', error.message);
+      }
+      
       setPayments([]);
     } finally {
       setLoading(false);
@@ -234,7 +257,7 @@ const Payments: React.FC = () => {
         apprenantId: parseInt(newPayment.apprenantId),
         moisPaye: parseInt(newPayment.moisPaye)
       };
-
+      
       if (isEdit && currentPayment) {
         await paiementAPI.update(currentPayment.id.toString(), payload);
       } else {
@@ -301,6 +324,54 @@ const Payments: React.FC = () => {
     }
   };
 
+  // Test API connectivity with detailed debugging
+  const testAPIConnection = async () => {
+    console.log('🧪 Testing API connections...');
+    
+    // Test the base URL
+    console.log('🌐 Current API base URL:', api.defaults.baseURL);
+    
+    try {
+      console.log('Testing payments API directly with axios...');
+      const paymentsTest = await api.get('/paiements');
+      console.log('✅ Payments API works:', paymentsTest);
+    } catch (error: any) {
+      console.error('❌ Payments API failed:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method,
+        fullURL: error.config?.baseURL + error.config?.url
+      });
+      
+      // Try without the extra /api
+      try {
+        console.log('🔄 Trying alternative endpoint: /paiements');
+        const altTest = await axios.get('http://localhost:8080/api/paiements', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': api.defaults.headers.common.Authorization
+          }
+        });
+        console.log('✅ Alternative endpoint works:', altTest);
+      } catch (altError: any) {
+        console.error('❌ Alternative endpoint also failed:', altError.response?.status);
+      }
+    }
+    
+    try {
+      console.log('Testing learners API...');
+      const learnersTest = await api.get('/apprenants');
+      console.log('✅ Learners API works:', learnersTest);
+    } catch (error: any) {
+      console.error('❌ Learners API failed:', {
+        status: error.response?.status,
+        data: error.response?.data
+      });
+    }
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setStatusFilter('');
@@ -355,7 +426,7 @@ const Payments: React.FC = () => {
     },
     {
       Header: 'Months Paid',
-      accessor: 'id',
+      accessor: 'id' as keyof Learner,
       Cell: ({ value }: any) => {
         const summary = learnerPaymentSummary[value];
         return summary ? summary.totalPaid : 0;
@@ -363,7 +434,7 @@ const Payments: React.FC = () => {
     },
     {
       Header: 'Remaining Months',
-      accessor: 'remainingMonths',
+      accessor: 'id' as keyof Learner,
       Cell: ({ row }: any) => {
         const learnerId = row.original.id;
         const summary = learnerPaymentSummary[learnerId];
@@ -383,7 +454,7 @@ const Payments: React.FC = () => {
     },
     {
       Header: 'Progress',
-      accessor: 'progress',
+      accessor: 'id' as keyof Learner,
       Cell: ({ row }: any) => {
         const learnerId = row.original.id;
         const summary = learnerPaymentSummary[learnerId];
@@ -402,7 +473,7 @@ const Payments: React.FC = () => {
     },
     {
       Header: 'Status',
-      accessor: 'status',
+      accessor: 'id' as keyof Learner,
       Cell: ({ row }: any) => {
         const learnerId = row.original.id;
         const summary = learnerPaymentSummary[learnerId];
@@ -424,6 +495,14 @@ const Payments: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Payments</h1>
         <div className="flex space-x-2">
+          <Button 
+            variant="secondary" 
+            onClick={testAPIConnection}
+            className="flex items-center space-x-2"
+          >
+            <AlertCircle size={20} />
+            <span>Debug API</span>
+          </Button>
           <Button 
             variant="secondary" 
             onClick={generateMonthlyPayments}
@@ -466,7 +545,7 @@ const Payments: React.FC = () => {
         </div>
         
         <Button 
-          variant="outline" 
+          variant="secondary" 
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center space-x-2"
         >
@@ -475,7 +554,7 @@ const Payments: React.FC = () => {
         </Button>
 
         <Button 
-          variant={showPaymentSummary ? "primary" : "outline"}
+          variant={showPaymentSummary ? "primary" : "secondary"}
           onClick={() => setShowPaymentSummary(!showPaymentSummary)}
           className="flex items-center space-x-2"
         >
@@ -485,7 +564,7 @@ const Payments: React.FC = () => {
         
         {showFilters && (
           <Button 
-            variant="ghost" 
+            variant="secondary" 
             onClick={clearFilters}
             className="text-sm text-gray-500"
           >
@@ -631,7 +710,6 @@ const Payments: React.FC = () => {
               {learners.map((learner) => {
                 const summary = learnerPaymentSummary[learner.id];
                 const totalPaid = summary ? summary.totalPaid : 0;
-                const remaining = MAX_FORMATION_DURATION - totalPaid;
                 
                 return (
                   <option key={learner.id} value={learner.id}>
@@ -652,7 +730,6 @@ const Payments: React.FC = () => {
                 const totalPaid = summary ? summary.totalPaid : 0;
                 const moisPayeValue = parseInt(newPayment.moisPaye || '1');
                 const wouldPay = totalPaid + (newPayment.statut === 'PAID' ? moisPayeValue : 0);
-                const remaining = MAX_FORMATION_DURATION - wouldPay;
                 
                 return (
                   <div className="mt-1 text-sm">

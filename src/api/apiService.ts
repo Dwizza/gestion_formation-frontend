@@ -466,7 +466,10 @@ export const paiementAPI = {
         data: unpaidPayments
       };
     }
-  }
+  },
+
+  // Get unpaid report from the new API endpoint
+  getUnpaidReport: () => api.get('/payments/unpaid-report')
 };
 
 // Notification API - Fixed paths by removing redundant /api prefix

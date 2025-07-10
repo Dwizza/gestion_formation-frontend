@@ -22,6 +22,7 @@ import AdminLearners from '../admin/Learners';
 import AdminAttendance from '../admin/Attendance';
 import AdminPayments from '../admin/Payments';
 import AdminNotifications from '../admin/Notifications';
+import OverduePayments from '../admin/OverduePayments';
 
 // Trainer pages
 import TrainerDashboard from '../trainer/Dashboard';
@@ -97,6 +98,7 @@ const AppRoutes = () => {
         <Route path="learners" element={<AdminLearners />} />
         <Route path="attendance" element={<AdminAttendance />} />
         <Route path="payments" element={<AdminPayments />} />
+        <Route path="overdue-payments" element={<OverduePayments />} />
         <Route path="notifications" element={<AdminNotifications />} />
       </Route>
 
