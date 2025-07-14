@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import NotificationItem from '../../components/notifications/NotificationItem';
 import { markNotificationAsRead } from '../../api/apiService';
 import { useNotifications } from '../../hooks/useNotifications';
-import { Bell, AlertTriangle, Filter, Search } from 'lucide-react';
+import { Bell, AlertTriangle, Filter, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Helper function to check if a notification is read
 // Handles both boolean (true/false) and number (1/0) formats
@@ -34,6 +34,10 @@ const Notifications: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showReadNotifications, setShowReadNotifications] = useState(false); // New state to show/hide read notifications
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // Fixed at 10 items per page
 
   // Load notifications on startup
   useEffect(() => {
@@ -87,6 +91,67 @@ const Notifications: React.FC = () => {
       notification.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       notification.message.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
+  const paginatedNotifications = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredNotifications.slice(startIndex, endIndex);
+  }, [filteredNotifications, currentPage, itemsPerPage]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedFilter, selectedType, showReadNotifications]);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      const end = Math.min(totalPages, start + maxVisiblePages - 1);
+      
+      if (start > 1) {
+        pages.push(1);
+        if (start > 2) pages.push('...');
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages) {
+        if (end < totalPages - 1) pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
 
   if (loading) {
     return (
@@ -217,7 +282,7 @@ const Notifications: React.FC = () => {
         {notifications.length > 0 && (
           <div className="flex justify-between items-center text-sm text-gray-600 px-1">
             <span>
-              Showing {filteredNotifications.length} of {notifications.length} notifications
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredNotifications.length)} of {filteredNotifications.length} notifications
               {!showReadNotifications && ' (unread only)'}
             </span>
             {!showReadNotifications && stats.unread === 0 && stats.total > 0 && (
@@ -251,13 +316,72 @@ const Notifications: React.FC = () => {
             </div>
           </Card>
         ) : (
-          filteredNotifications.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              onMarkAsRead={handleMarkAsRead}
-            />
-          ))
+          <>
+            {/* Notifications list */}
+            {paginatedNotifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onMarkAsRead={handleMarkAsRead}
+              />
+            ))}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <Card>
+                <div className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    {/* Results info */}
+                    <div className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    
+                    {/* Pagination buttons */}
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={goToPreviousPage}
+                        disabled={currentPage === 1}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Previous
+                      </Button>
+                      
+                      {/* Page numbers */}
+                      <div className="flex space-x-1">
+                        {getPageNumbers().map((page, index) => (
+                          <div key={index}>
+                            {page === '...' ? (
+                              <span className="px-3 py-1 text-gray-500">...</span>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant={currentPage === page ? "primary" : "secondary"}
+                                onClick={() => goToPage(page as number)}
+                              >
+                                {page}
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={goToNextPage}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </>
         )}
       </div>
     </div>
