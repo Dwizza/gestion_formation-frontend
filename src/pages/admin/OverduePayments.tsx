@@ -42,7 +42,7 @@ interface OverdueLearner {
   nom: string;
   montant: number;
   date: string;
-  status: string;
+  statut: string;
   apprenantId: number;
   apprenantNom: string;
 }
@@ -144,8 +144,8 @@ const OverduePayments: React.FC = () => {
       )
     },
     {
-      Header: 'Status',
-      accessor: 'status',
+      Header: 'Statut',
+      accessor: 'statut',
       Cell: ({ value, row }: { value: any; row: any }) => {
         // Debug logging
         console.log('Status value:', value);
