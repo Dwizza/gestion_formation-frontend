@@ -280,15 +280,19 @@ const Notifications: React.FC = () => {
       <div className="space-y-4">
         {/* Indication of the number of results */}
         {notifications.length > 0 && (
-          <div className="flex justify-between items-center text-sm text-gray-600 px-1">
-            <span>
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredNotifications.length)} of {filteredNotifications.length} notifications
-              {!showReadNotifications && ' (unread only)'}
-            </span>
-            {!showReadNotifications && stats.unread === 0 && stats.total > 0 && (
-              <span className="text-green-600 font-medium">
-                ✅ All notifications are read!
+          <div className="flex justify-between items-center bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-gray-700">
+                Showing <span className="font-bold text-green-600">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-bold text-green-600">{Math.min(currentPage * itemsPerPage, filteredNotifications.length)}</span> of <span className="font-bold text-gray-600">{filteredNotifications.length}</span> notifications
+                {!showReadNotifications && <span className="text-gray-500 ml-1">(unread only)</span>}
               </span>
+            </div>
+            {!showReadNotifications && stats.unread === 0 && stats.total > 0 && (
+              <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-3 py-1 rounded-full border border-green-200">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium">All notifications are read!</span>
+              </div>
             )}
           </div>
         )}
@@ -329,53 +333,68 @@ const Notifications: React.FC = () => {
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <Card>
-                <div className="px-6 py-4">
+                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100">
                   <div className="flex items-center justify-between">
                     {/* Results info */}
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm font-medium text-gray-700 bg-white px-3 py-1 rounded-full shadow-sm border">
                       Page {currentPage} of {totalPages}
                     </div>
                     
                     {/* Pagination buttons */}
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
+                    <div className="flex items-center space-x-1">
+                      <button
                         onClick={goToPreviousPage}
                         disabled={currentPage === 1}
+                        className={`
+                          inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
+                          ${currentPage === 1 
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+                            : 'text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md'
+                          }
+                        `}
                       >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-4 h-4 mr-1" />
                         Previous
-                      </Button>
+                      </button>
                       
                       {/* Page numbers */}
-                      <div className="flex space-x-1">
+                      <div className="flex space-x-1 mx-2">
                         {getPageNumbers().map((page, index) => (
                           <div key={index}>
                             {page === '...' ? (
-                              <span className="px-3 py-1 text-gray-500">...</span>
+                              <span className="px-3 py-2 text-gray-400 font-medium">...</span>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant={currentPage === page ? "primary" : "secondary"}
+                              <button
                                 onClick={() => goToPage(page as number)}
+                                className={`
+                                  px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 min-w-[40px]
+                                  ${currentPage === page 
+                                    ? 'bg-green-600 text-white shadow-lg transform scale-105 ring-2 ring-green-200' 
+                                    : 'text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md hover:transform hover:scale-105'
+                                  }
+                                `}
                               >
                                 {page}
-                              </Button>
+                              </button>
                             )}
                           </div>
                         ))}
                       </div>
                       
-                      <Button
-                        size="sm"
-                        variant="secondary"
+                      <button
                         onClick={goToNextPage}
                         disabled={currentPage === totalPages}
+                        className={`
+                          inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
+                          ${currentPage === totalPages 
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+                            : 'text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md'
+                          }
+                        `}
                       >
                         Next
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </button>
                     </div>
                   </div>
                 </div>
