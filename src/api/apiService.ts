@@ -469,7 +469,10 @@ export const paiementAPI = {
   },
 
   // Get unpaid report from the new API endpoint
-  getUnpaidReport: () => api.get('/payments/unpaid-report')
+  getUnpaidReport: () => api.get('/payments/unpaid-report'),
+
+  // Mark payment as paid
+  markAsPaid: (paymentId: number) => api.put(`/payments/${paymentId}/mark-as-paid`)
 };
 
 // Notification API - Fixed paths by removing redundant /api prefix

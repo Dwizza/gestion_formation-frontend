@@ -33,6 +33,7 @@ import Card from '../../components/ui/Card';
 import DataTable from '../../components/ui/DataTable';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Modal from '../../components/ui/Modal';
 import { paiementAPI } from '../../api/apiService';
 import { Search, Calendar, AlertTriangle, Clock, DollarSign, User } from 'lucide-react';
 import { Column } from 'react-table';
@@ -59,6 +60,9 @@ const OverduePayments: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [markingPaidIds, setMarkingPaidIds] = useState<Set<number>>(new Set());
+  const [confirmPayment, setConfirmPayment] = useState<{paymentId: number, learnerName: string} | null>(null);
   const [reportStats, setReportStats] = useState({
     totalUnpaidAmount: 0,
     numberOfUnpaidLearners: 0,
@@ -96,6 +100,38 @@ const OverduePayments: React.FC = () => {
       setError('Failed to fetch unpaid payments data. Please try again later.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkAsPaid = async (paymentId: number, learnerName: string) => {
+    try {
+      setMarkingPaidIds(prev => new Set(prev).add(paymentId));
+      setError(null);
+      setSuccessMessage(null);
+      
+      // Call the API to mark payment as paid
+      await paiementAPI.markAsPaid(paymentId);
+      
+      // Show success message
+      setSuccessMessage(`Payment successfully marked as paid for ${learnerName}`);
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      
+      // Refresh the data to update the UI
+      await fetchOverduePayments();
+      
+    } catch (error) {
+      console.error('Error marking payment as paid:', error);
+      setError(`Failed to mark payment as paid for ${learnerName}. Please try again.`);
+    } finally {
+      setMarkingPaidIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(paymentId);
+        return newSet;
+      });
     }
   };
 
@@ -144,18 +180,21 @@ const OverduePayments: React.FC = () => {
       )
     },
     {
-      Header: 'Statut',
+      Header: 'Status',
       accessor: 'statut',
-      Cell: ({ value, row }: { value: any; row: any }) => {
-        // Debug logging
-        console.log('Status value:', value);
-        console.log('Full row data:', row.original);
+      Cell: ({ value }: { value: any }) => {
+        const status = value || 'UNPAID';
+        const statusColors = {
+          'UNPAID': 'bg-red-100 text-red-800',
+          'PENDING': 'bg-yellow-100 text-yellow-800',
+          'PAID': 'bg-green-100 text-green-800'
+        };
         
-        // Simplified display for testing
         return (
-          <div className="text-sm">
-            <div className="font-medium">{value || 'No Status'}</div>
-            <div className="text-xs text-gray-500">Raw: {JSON.stringify(value)}</div>
+          <div className="flex items-center space-x-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
+              {status}
+            </span>
           </div>
         );
       }
@@ -163,27 +202,24 @@ const OverduePayments: React.FC = () => {
     {
       Header: 'Actions',
       accessor: 'id',
-      Cell: ({ row }: { row: any }) => (
-        <div className="flex space-x-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              console.log('Send reminder to:', row.original.apprenantNom);
-            }}
-          >
-            Send Reminder
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => {
-              console.log('Mark as paid:', row.original.apprenantNom);
-            }}
-          >
-            Mark Paid
-          </Button>
-        </div>
-      )
+      Cell: ({ row }: { row: any }) => {
+        const isMarkingPaid = markingPaidIds.has(row.original.id);
+        
+        return (
+          <div className="flex space-x-2">
+            <Button
+              size="sm"
+              onClick={() => setConfirmPayment({
+                paymentId: row.original.id,
+                learnerName: row.original.apprenantNom
+              })}
+              disabled={isMarkingPaid}
+            >
+              {isMarkingPaid ? 'Marking...' : 'Mark Paid'}
+            </Button>
+          </div>
+        );
+      }
     }
   ];
 
@@ -212,6 +248,26 @@ const OverduePayments: React.FC = () => {
               size="sm"
               variant="secondary"
               onClick={() => setError(null)}
+              className="ml-auto"
+            >
+              Dismiss
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Success Banner */}
+      {successMessage && (
+        <Card className="p-4 bg-green-50 border-green-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs">✓</span>
+            </div>
+            <p className="text-green-800">{successMessage}</p>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setSuccessMessage(null)}
               className="ml-auto"
             >
               Dismiss
@@ -310,6 +366,40 @@ const OverduePayments: React.FC = () => {
           </div>
         )}
       </Card>
+
+      {/* Confirmation Modal */}
+      {confirmPayment && (
+        <Modal
+          isOpen={true}
+          onClose={() => setConfirmPayment(null)}
+          title="Confirm Payment"
+          size="sm"
+          footer={
+            <div className="flex space-x-3">
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmPayment(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  handleMarkAsPaid(confirmPayment.paymentId, confirmPayment.learnerName);
+                  setConfirmPayment(null);
+                }}
+                disabled={markingPaidIds.has(confirmPayment.paymentId)}
+              >
+                {markingPaidIds.has(confirmPayment.paymentId) ? 'Marking...' : 'Confirm'}
+              </Button>
+            </div>
+          }
+        >
+          <p className="text-gray-600">
+            Are you sure you want to mark the payment as paid for{' '}
+            <span className="font-semibold">{confirmPayment.learnerName}</span>?
+          </p>
+        </Modal>
+      )}
     </div>
   );
 };

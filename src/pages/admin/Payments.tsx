@@ -495,14 +495,7 @@ const Payments: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Payments</h1>
         <div className="flex space-x-2">
-          <Button 
-            variant="secondary" 
-            onClick={testAPIConnection}
-            className="flex items-center space-x-2"
-          >
-            <AlertCircle size={20} />
-            <span>Debug API</span>
-          </Button>
+         
           <Button 
             variant="secondary" 
             onClick={generateMonthlyPayments}
