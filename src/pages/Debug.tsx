@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import NotificationStatusDebug from '../components/debug/NotificationStatusDebug';
 
 const Debug: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -26,6 +27,11 @@ const Debug: React.FC = () => {
       <div className="mb-4 p-4 bg-gray-100 rounded">
         <h2 className="font-bold">Authentication State:</h2>
         <pre>{JSON.stringify({ isAuthenticated, user }, null, 2)}</pre>
+      </div>
+
+      {/* Toast Notification Debug Section */}
+      <div className="mb-6">
+        <NotificationStatusDebug />
       </div>
       
       <div className="flex flex-col space-y-2">

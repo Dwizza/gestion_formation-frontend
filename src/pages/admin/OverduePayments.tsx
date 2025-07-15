@@ -7,6 +7,7 @@
  * - Fetches data exclusively from /api/payments/unpaid-report endpoint
  * - Displays unpaid payment records with learner information
  * - Real-time search filtering by learner name
+ * - Date range filtering for payment dates
  * - Summary cards showing total unpaid amount, number of unpaid learners, and average overdue months
  * - Action buttons for payment reminders and marking payments as paid
  * 
@@ -59,6 +60,8 @@ const OverduePayments: React.FC = () => {
   const [overdueLearners, setOverdueLearners] = useState<OverdueLearner[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [markingPaidIds, setMarkingPaidIds] = useState<Set<number>>(new Set());
@@ -135,9 +138,18 @@ const OverduePayments: React.FC = () => {
     }
   };
 
-  const filteredOverdueLearners = overdueLearners.filter(learner =>
-    learner.apprenantNom.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOverdueLearners = overdueLearners.filter(learner => {
+    const matchesName = learner.apprenantNom.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const learnerDate = new Date(learner.date);
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo) : null;
+    
+    const matchesDateFrom = !fromDate || learnerDate >= fromDate;
+    const matchesDateTo = !toDate || learnerDate <= toDate;
+    
+    return matchesName && matchesDateFrom && matchesDateTo;
+  });
 
   const columns: Column<OverdueLearner>[] = [
     {
@@ -321,26 +333,64 @@ const OverduePayments: React.FC = () => {
 
       {/* Filters */}
       <Card className="p-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search by learner name..."
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Button
+              onClick={fetchOverduePayments}
+              variant="secondary"
+              disabled={loading}
+            >
+              {loading ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
+          
+          {/* Date Filters */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-600 font-medium">Filter by Date:</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-600">From:</label>
               <Input
-                type="text"
-                placeholder="Search by learner name..."
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                type="date"
+                value={dateFrom}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)}
+                className="w-40"
               />
             </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-600">To:</label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)}
+                className="w-40"
+              />
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setDateFrom('');
+                setDateTo('');
+              }}
+            >
+              Clear Dates
+            </Button>
           </div>
-          <Button
-            onClick={fetchOverduePayments}
-            variant="secondary"
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </Button>
         </div>
       </Card>
 

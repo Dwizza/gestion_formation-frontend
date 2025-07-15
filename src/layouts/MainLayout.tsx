@@ -2,6 +2,7 @@
 import React, { ReactNode } from 'react';
 import { SidebarProvider } from '../contexts/SidebarContext';
 import Sidebar from '../components/ui/Sidebar';
+import { useNotificationToast } from '../hooks/useNotificationToast';
 
 interface MainLayoutProps {
   userRole: 'ADMIN' | 'TRAINER';
@@ -9,6 +10,9 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ userRole, children }) => {
+  // Initialize notification toast monitoring
+  useNotificationToast();
+
   return (
     <SidebarProvider>
       <div className="flex h-screen bg-gray-50">

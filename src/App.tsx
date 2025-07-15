@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
+import { ToastProvider } from './contexts/ToastContext';
 import AppRoutes from './pages/Routes/AppRoutes';
 
 const App: React.FC = () => {
@@ -19,7 +20,9 @@ const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <SidebarProvider>
-          <AppRoutes />
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
         </SidebarProvider>
       </AuthProvider>
     </BrowserRouter>
