@@ -17,7 +17,8 @@ import {
   Settings,
   LogOut,
   GraduationCap,
-  AlertTriangle
+  AlertTriangle,
+  LayoutGrid
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -88,6 +89,18 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
           path: '/admin/notifications',
           color: '#DC2626',
           badge: stats.unread > 0 ? stats.unread : undefined // Only show badge when there are unread notifications
+        },
+        {
+          icon: <Calendar size={20} />,
+          title: 'Calendar',
+          path: '/admin/calendar',
+          color: '#059669'
+        },
+        {
+          icon: <LayoutGrid size={20} />,
+          title: 'Sessions',
+          path: '/admin/sessions',
+          color: '#7C3AED'
         }
       ];
     } else {

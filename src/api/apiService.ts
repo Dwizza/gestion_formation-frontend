@@ -216,6 +216,35 @@ export const groupeAPI = {
     }
   },
   getByFormation: (formationId: string) => api.get(`/groupes/formation/${formationId}`),
+  
+  // API for daily training schedule (legacy)
+  getEmploiDaily: () => api.get('/groupes/emploi-daily'),
+};
+
+// Emploi du Temps API - Updated with new backend endpoints
+export const emploiDuTempsAPI = {
+  // GET /api/emploi-du-temps/all - Tous les emplois du temps
+  getAll: () => api.get('/emploi-du-temps/all'),
+  
+  // GET /api/emploi-du-temps/groupe/{id} - Emploi d'un groupe
+  getByGroupe: (groupeId: string) => api.get(`/emploi-du-temps/groupe/${groupeId}`),
+  
+  // GET /api/emploi-du-temps/formation/{id} - Par formation
+  getByFormation: (formationId: string) => api.get(`/emploi-du-temps/formation/${formationId}`),
+  
+  // GET /api/emploi-du-temps/formateur/{id} - Par formateur  
+  getByFormateur: (formateurId: string) => api.get(`/emploi-du-temps/formateur/${formateurId}`),
+  
+  // GET /api/emploi-du-temps/periode?startDate=&endDate= - Par période
+  getByPeriode: (startDate: string, endDate: string) => 
+    api.get(`/emploi-du-temps/periode?startDate=${startDate}&endDate=${endDate}`),
+  
+  // GET /api/emploi-du-temps/groupe/{id}/semaine?weekStart= - Semaine d'un groupe
+  getGroupeWeek: (groupeId: string, weekStart: string) => 
+    api.get(`/emploi-du-temps/groupe/${groupeId}/semaine?weekStart=${weekStart}`),
+  
+  // GET /api/emploi-du-temps/aujourd-hui - Sessions d'aujourd'hui
+  getToday: () => api.get('/emploi-du-temps/aujourd-hui'),
 };
 
 // Apprenant API - Fixed paths by removing redundant /api prefix
@@ -230,18 +259,99 @@ export const apprenantAPI = {
 
 // Session API - Fixed paths by removing redundant /api prefix
 export const sessionAPI = {
-  create: (session: Session) => api.post('/sessions', session),
+  
+  create: async (session: any) => {
+    console.log('Creating session:', session);
+    
+    // Transform data to match backend expectations
+    // Only include required fields first, then add optional ones if they exist
+    const sessionData: any = {
+      title: session.title,
+      groupeId: parseInt(session.groupeId),
+      formateurId: parseInt(session.formateurId)
+    };
+    
+    // Add optional fields only if they have values
+    if (session.description) sessionData.description = session.description;
+    if (session.date) sessionData.date = session.date;
+    if (session.startTime) sessionData.startTime = session.startTime;
+    if (session.endTime) sessionData.endTime = session.endTime;
+    if (session.days) sessionData.days = session.days;
+    if (session.status) sessionData.status = session.status;
+    if (session.location) sessionData.location = session.location;
+    if (session.maxParticipants) sessionData.maxParticipants = parseInt(session.maxParticipants);
+    if (session.notes) sessionData.notes = session.notes;
+    
+    console.log('Transformed session data:', sessionData);
+    
+    try {
+      const response = await api.post('/sessions', sessionData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, application/hal+json',
+        },
+      });
+      
+      console.log('✅ Session created successfully:', response.data);
+      return response;
+    } catch (error: any) {
+      console.error('❌ Session creation failed:');
+      console.error('Status:', error.response?.status);
+      console.error('Error:', error.response?.data);
+      console.error('Full error object:', error);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Unknown error occurred';
+      
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else {
+          errorMessage = JSON.stringify(error.response.data);
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error('Extracted error message:', errorMessage);
+      
+      // Provide specific error messages based on status
+      if (error.response?.status === 400) {
+        throw new Error(`Validation Error: ${errorMessage}`);
+      } else if (error.response?.status === 500) {
+        throw new Error(`Server Error: ${errorMessage}`);
+      } else {
+        throw new Error(`Session creation failed: ${errorMessage}`);
+      }
+    }
+  },
   
   // Fix for getAll - use POST if GET is not allowed
   getAll: async () => {
     try {
       // Try GET first
-      return await api.get('/sessions');
+      console.log('🔍 Trying GET /sessions...');
+      const response = await api.get('/sessions');
+      console.log('✅ GET /sessions successful:', response.data);
+      return response;
     } catch (error: any) {
+      console.log('❌ GET /sessions failed:', error.response?.status, error.response?.statusText);
+      
       // If Method Not Allowed (405), try POST
       if (error.response && error.response.status === 405) {
-        console.log('GET not allowed for /sessions, trying POST');
-        return await api.post('/sessions/search', {});
+        console.log('🔄 GET not allowed for /sessions, trying POST search...');
+        try {
+          const response = await api.post('/sessions/search', {});
+          console.log('✅ POST /sessions/search successful:', response.data);
+          return response;
+        } catch (postError: any) {
+          console.log('❌ POST /sessions/search also failed:', postError.response?.status);
+          throw postError;
+        }
       }
       throw error;
     }
@@ -322,6 +432,46 @@ export const sessionAPI = {
         data: filteredSessions
       };
     }
+  },
+  
+  // 4. PUT /api/sessions/{id} - تحديث جلسة موجودة
+  update: async (id: string, session: any) => {
+    console.log('Updating session:', id, session);
+    try {
+      const response = await api.put(`/sessions/${id}`, session, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      return response;
+    } catch (error: any) {
+      console.error('Session update error:', error);
+      console.error('Error response:', error.response);
+      
+      // If 415 error, try with different content type
+      if (error.response && error.response.status === 415) {
+        console.log('Retrying with form-data content type...');
+        try {
+          const response = await api.put(`/sessions/${id}`, session, {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          });
+          return response;
+        } catch (retryError) {
+          console.error('Retry with form-data also failed:', retryError);
+          throw retryError;
+        }
+      }
+      throw error;
+    }
+  },
+  
+  // 5. DELETE /api/sessions/{id} - حذف جلسة
+  delete: (id: string) => {
+    console.log('Deleting session:', id);
+    return api.delete(`/sessions/${id}`);
   },
   
   // Fix for getAttendance with fallback mechanism and additional endpoints to try

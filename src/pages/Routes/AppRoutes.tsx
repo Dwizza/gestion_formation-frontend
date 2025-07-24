@@ -23,6 +23,8 @@ import AdminAttendance from '../admin/Attendance';
 import AdminPayments from '../admin/Payments';
 import AdminNotifications from '../admin/Notifications';
 import OverduePayments from '../admin/OverduePayments';
+import TrainingCalendar from '../admin/TrainingCalendar';
+import AdminSessions from '../admin/Sessions';
 
 // Trainer pages
 import TrainerDashboard from '../trainer/Dashboard';
@@ -100,6 +102,8 @@ const AppRoutes = () => {
         <Route path="payments" element={<AdminPayments />} />
         <Route path="overdue-payments" element={<OverduePayments />} />
         <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="calendar" element={<TrainingCalendar />} />
+        <Route path="sessions" element={<AdminSessions />} />
       </Route>
 
       {/* Trainer routes with MainLayout wrapper */}
