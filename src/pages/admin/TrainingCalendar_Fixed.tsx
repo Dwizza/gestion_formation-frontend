@@ -40,11 +40,6 @@ interface Formateur {
 }
 
 const TrainingCalendar: React.FC = () => {
-  // 🔧 Helper function to get consistent local date strings
-  const getLocalDateString = (date: Date): string => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  };
-
   const [emploiData, setEmploiData] = useState<EmploiDuTemps[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,8 +97,7 @@ const TrainingCalendar: React.FC = () => {
   };
 
   const getSessionsForDate = (date: Date) => {
-    // 🔧 FIX: Use local date string to match event dates
-    const dateString = getLocalDateString(date);
+    const dateString = date.toISOString().split('T')[0];
     return emploiData.filter(emploi => emploi.date === dateString);
   };
 
@@ -187,14 +181,6 @@ const TrainingCalendar: React.FC = () => {
 
       console.log('✅ Data loaded - Groups:', groupsData.length, 'Sessions:', sessionsData.length);
 
-      // 🔍 DEBUG: Log sample data to understand structure
-      if (groupsData.length > 0) {
-        console.log('📊 Sample Group:', JSON.stringify(groupsData[0], null, 2));
-      }
-      if (sessionsData.length > 0) {
-        console.log('📊 Sample Session:', JSON.stringify(sessionsData[0], null, 2));
-      }
-
       // SIMPLE calendar event generation - no complex loops
       let calendarEvents: EmploiDuTemps[] = [];
       
@@ -228,105 +214,61 @@ const TrainingCalendar: React.FC = () => {
                 const checkDate = new Date(year, month, date);
                 
                 if (checkDate.getDay() === dayNumber) {
-                  // 🔧 FIX: Use local date string to avoid timezone offset issues
-                  const dateStr = getLocalDateString(checkDate);
+                  const dateStr = checkDate.toISOString().split('T')[0];
                   
-                  // 🔍 CHECK FORMATION PERIOD: Only create event if within formation period
-                  let isWithinFormationPeriod = true;
+                  // Create simple event - no duplicates
+                  const event: EmploiDuTemps = {
+                    id: parseInt(`${session.id}${dayNumber}${date}000`),
+                    groupeId: session.groupeId,
+                    groupeName: session.groupeName || groupe?.name || 'Unknown',
+                    formationId: groupe?.formationId,
+                    formationTitle: groupe?.formationTitle || session.title,
+                    formateurId: session.formateurId,
+                    formateurName: session.formateurName || groupe?.trainerName || 'Unknown',
+                    date: dateStr,
+                    startDate: dateStr,
+                    endDate: dateStr,
+                    status: session.status || 'active',
+                    sessionTitle: session.title,
+                    description: `${session.title} - ${dayName}`,
+                    dayOfWeek: dayName.toLowerCase(),
+                    startTime: session.startTime || '09:00',
+                    endTime: session.endTime || '17:00',
+                    location: session.location || 'TBD',
+                    salle: session.location || 'TBD'
+                  };
                   
-                  // Check if we have formation period from group data
-                  if (groupe) {
-                    if (groupe.startDate && groupe.endDate) {
-                      isWithinFormationPeriod = dateStr >= groupe.startDate && dateStr <= groupe.endDate;
-                      console.log(`🗓️ Formation Period Check - ${groupe.name}: ${groupe.startDate} to ${groupe.endDate}, Event: ${dateStr}, Valid: ${isWithinFormationPeriod}`);
-                    } else if (groupe.formationStartDate && groupe.formationEndDate) {
-                      isWithinFormationPeriod = dateStr >= groupe.formationStartDate && dateStr <= groupe.formationEndDate;
-                      console.log(`🗓️ Formation Period Check - ${groupe.name}: ${groupe.formationStartDate} to ${groupe.formationEndDate}, Event: ${dateStr}, Valid: ${isWithinFormationPeriod}`);
-                    }
-                  }
-                  
-                  // Check if session itself has period limits
-                  if (session.startDate && session.endDate) {
-                    const sessionPeriodValid = dateStr >= session.startDate && dateStr <= session.endDate;
-                    isWithinFormationPeriod = isWithinFormationPeriod && sessionPeriodValid;
-                    console.log(`🗓️ Session Period Check - ${session.title}: ${session.startDate} to ${session.endDate}, Event: ${dateStr}, Valid: ${sessionPeriodValid}`);
-                  }
-                  
-                  // Only create event if within valid period
-                  if (isWithinFormationPeriod) {
-                    const event: EmploiDuTemps = {
-                      id: parseInt(`${session.id}${dayNumber}${date}000`),
-                      groupeId: session.groupeId,
-                      groupeName: session.groupeName || groupe?.name || 'Unknown',
-                      formationId: groupe?.formationId,
-                      formationTitle: groupe?.formationTitle || session.title,
-                      formateurId: session.formateurId,
-                      formateurName: session.formateurName || groupe?.trainerName || 'Unknown',
-                      date: dateStr,
-                      startDate: dateStr,
-                      endDate: dateStr,
-                      status: session.status || 'active',
-                      sessionTitle: session.title,
-                      description: `${session.title} - ${dayName}`,
-                      dayOfWeek: dayName.toLowerCase(),
-                      startTime: session.startTime || '09:00',
-                      endTime: session.endTime || '17:00',
-                      location: session.location || 'TBD',
-                      salle: session.location || 'TBD'
-                    };
-                    
-                    calendarEvents.push(event);
-                    console.log(`✅ Event: ${session.title} on ${dateStr} (${dayName}) - VALID PERIOD`);
-                    console.log(`🔧 Date created as: ${dateStr}, Calendar day: ${checkDate.getDate()}, Month: ${checkDate.getMonth() + 1}`);
-                  } else {
-                    console.log(`❌ Event SKIPPED: ${session.title} on ${dateStr} (${dayName}) - OUTSIDE FORMATION PERIOD`);
-                  }
+                  calendarEvents.push(event);
+                  console.log(`✅ Event: ${session.title} on ${dateStr} (${dayName})`);
                 }
               }
             }
           });
         } else if (session.date) {
-          // Single date event - check if within formation period
-          let isWithinFormationPeriod = true;
+          // Single date event
+          const event: EmploiDuTemps = {
+            id: session.id,
+            groupeId: session.groupeId,
+            groupeName: session.groupeName || groupe?.name || 'Unknown',
+            formationId: groupe?.formationId,
+            formationTitle: groupe?.formationTitle || session.title,
+            formateurId: session.formateurId,
+            formateurName: session.formateurName || groupe?.trainerName || 'Unknown',
+            date: session.date,
+            startDate: session.date,
+            endDate: session.date,
+            status: session.status || 'active',
+            sessionTitle: session.title,
+            description: session.description || session.title,
+            dayOfWeek: new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(),
+            startTime: session.startTime || '09:00',
+            endTime: session.endTime || '17:00',
+            location: session.location || 'TBD',
+            salle: session.location || 'TBD'
+          };
           
-          // Check if we have formation period from group data
-          if (groupe) {
-            if (groupe.startDate && groupe.endDate) {
-              isWithinFormationPeriod = session.date >= groupe.startDate && session.date <= groupe.endDate;
-              console.log(`🗓️ Formation Period Check - ${groupe.name}: ${groupe.startDate} to ${groupe.endDate}, Event: ${session.date}, Valid: ${isWithinFormationPeriod}`);
-            } else if (groupe.formationStartDate && groupe.formationEndDate) {
-              isWithinFormationPeriod = session.date >= groupe.formationStartDate && session.date <= groupe.formationEndDate;
-              console.log(`🗓️ Formation Period Check - ${groupe.name}: ${groupe.formationStartDate} to ${groupe.formationEndDate}, Event: ${session.date}, Valid: ${isWithinFormationPeriod}`);
-            }
-          }
-          
-          if (isWithinFormationPeriod) {
-            const event: EmploiDuTemps = {
-              id: session.id,
-              groupeId: session.groupeId,
-              groupeName: session.groupeName || groupe?.name || 'Unknown',
-              formationId: groupe?.formationId,
-              formationTitle: groupe?.formationTitle || session.title,
-              formateurId: session.formateurId,
-              formateurName: session.formateurName || groupe?.trainerName || 'Unknown',
-              date: session.date,
-              startDate: session.date,
-              endDate: session.date,
-              status: session.status || 'active',
-              sessionTitle: session.title,
-              description: session.description || session.title,
-              dayOfWeek: new Date(session.date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(),
-              startTime: session.startTime || '09:00',
-              endTime: session.endTime || '17:00',
-              location: session.location || 'TBD',
-              salle: session.location || 'TBD'
-            };
-            
-            calendarEvents.push(event);
-            console.log(`✅ Single event: ${session.title} on ${session.date} - VALID PERIOD`);
-          } else {
-            console.log(`❌ Single event SKIPPED: ${session.title} on ${session.date} - OUTSIDE FORMATION PERIOD`);
-          }
+          calendarEvents.push(event);
+          console.log(`✅ Single event: ${session.title} on ${session.date}`);
         }
       });
 
@@ -348,11 +290,8 @@ const TrainingCalendar: React.FC = () => {
           event.date && event.date >= startDate && event.date <= endDate
         );
       } else if (filterType === 'today') {
-        // 🔧 FIX: Use local date string for today filter
-        const today = new Date();
-        const todayStr = getLocalDateString(today);
-        calendarEvents = calendarEvents.filter(event => event.date === todayStr);
-        console.log(`🗓️ Today filter: Looking for ${todayStr}, Found ${calendarEvents.length} events`);
+        const today = new Date().toISOString().split('T')[0];
+        calendarEvents = calendarEvents.filter(event => event.date === today);
       }
 
       setEmploiData(calendarEvents);

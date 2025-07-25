@@ -84,23 +84,23 @@ const Sidebar: React.FC<SidebarProps> = ({ userRole }) => {
           color: '#DC2626'
         },
         {
-          icon: <Bell size={20} />,
-          title: 'Notifications',
-          path: '/admin/notifications',
-          color: '#DC2626',
-          badge: stats.unread > 0 ? stats.unread : undefined // Only show badge when there are unread notifications
-        },
-        {
           icon: <Calendar size={20} />,
           title: 'Calendar',
           path: '/admin/calendar',
-          color: '#059669'
+          color: '#EF4444'
         },
         {
           icon: <LayoutGrid size={20} />,
           title: 'Sessions',
           path: '/admin/sessions',
-          color: '#7C3AED'
+          color: '#DC2626'
+        },
+        {
+          icon: <Bell size={20} />,
+          title: 'Notifications',
+          path: '/admin/notifications',
+          color: '#DC2626',
+          badge: stats.unread > 0 ? stats.unread : undefined // Only show badge when there are unread notifications
         }
       ];
     } else {
