@@ -1,9 +1,145 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, Search, Calendar, Clock, Users, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Search, Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import { sessionAPI, groupeAPI } from '../../api/apiService';
+
+interface ToastProps {
+  message: string;
+  type: 'success' | 'error' | 'warning';
+  onClose: () => void;
+}
+
+const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const getToastStyles = () => {
+    switch (type) {
+      case 'success':
+        return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-green-200';
+      case 'error':
+        return 'bg-gradient-to-r from-red-500 to-rose-500 text-white border-red-200';
+      case 'warning':
+        return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-200';
+      default:
+        return 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-200';
+    }
+  };
+
+  const getIcon = () => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="h-5 w-5" />;
+      case 'error':
+        return <XCircle className="h-5 w-5" />;
+      case 'warning':
+        return <AlertCircle className="h-5 w-5" />;
+      default:
+        return <CheckCircle className="h-5 w-5" />;
+    }
+  };
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 max-w-md w-full transform transition-all duration-300 ease-in-out animate-slide-in-right`}>
+      <div className={`rounded-xl p-4 shadow-2xl border ${getToastStyles()}`}>
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            {getIcon()}
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-sm">{message}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex-shrink-0 hover:bg-white/20 rounded-lg p-1 transition-colors"
+          >
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface ConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'warning' | 'info';
+}
+
+const ConfirmModal: React.FC<ConfirmModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  type = 'danger'
+}) => {
+  const getTypeStyles = () => {
+    switch (type) {
+      case 'danger':
+        return {
+          icon: <XCircle className="h-8 w-8 text-red-500" />,
+          confirmBtn: 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700'
+        };
+      case 'warning':
+        return {
+          icon: <AlertCircle className="h-8 w-8 text-amber-500" />,
+          confirmBtn: 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700'
+        };
+      default:
+        return {
+          icon: <CheckCircle className="h-8 w-8 text-blue-500" />,
+          confirmBtn: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+        };
+    }
+  };
+
+  const styles = getTypeStyles();
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="">
+      <div className="text-center p-6">
+        <div className="flex justify-center mb-4">
+          {styles.icon}
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600 mb-6">{message}</p>
+        <div className="flex gap-3 justify-center">
+          <Button
+            onClick={onClose}
+            variant="outline-primary"
+            className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            {cancelText}
+          </Button>
+          <Button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className={`px-6 py-2 text-white shadow-lg hover:shadow-xl transition-all duration-200 ${styles.confirmBtn}`}
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
 
 interface Session {
   id: number;
@@ -12,12 +148,12 @@ interface Session {
   startTime: string;
   endTime: string;
   date: string;
-  days?: string[] | string; // Can be array or comma-separated string depending on API response
+  days?: string[] | string;
   status: 'active' | 'completed' | 'cancelled' | 'pending';
   groupeId: number;
-  groupName?: string; // From API response
+  groupName?: string;
   formateurId: number;
-  trainerName?: string; // From API response
+  trainerName?: string;
   location?: string;
   maxParticipants?: number;
   currentParticipants?: number;
@@ -70,7 +206,20 @@ const Sessions: React.FC = () => {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   
-  // Dropdown data
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
+  
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+  
   const [groupes, setGroupes] = useState<Groupe[]>([]);
   const [formateurs, setFormateurs] = useState<Formateur[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
@@ -91,6 +240,11 @@ const Sessions: React.FC = () => {
   });
   const [formErrors, setFormErrors] = useState<Partial<SessionFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper function to show toast
+  const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     loadSessions();
@@ -237,21 +391,24 @@ const Sessions: React.FC = () => {
 
   
   const handleDeleteSession = async (session: Session) => {
-    if (!confirm(`Are you sure you want to delete the session "${session.title}"?`)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await sessionAPI.delete(session.id.toString());
-      await loadSessions();
-      alert('Session deleted successfully!');
-    } catch (err: any) {
-      console.error('Error deleting session:', err);
-      setError('Failed to delete session. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Session',
+      message: `Are you sure you want to delete the session "${session.title}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await sessionAPI.delete(session.id.toString());
+          await loadSessions();
+          showToast('Session deleted successfully!', 'success');
+        } catch (err: any) {
+          console.error('Error deleting session:', err);
+          showToast('Failed to delete session. Please try again.', 'error');
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const validateForm = (): boolean => {
@@ -269,7 +426,6 @@ const Sessions: React.FC = () => {
       errors.formateurId = 'Trainer is required';
     }
 
-    // Optional validation for time fields if both are provided
     if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
       errors.endTime = 'End time must be after start time';
     }
@@ -288,7 +444,6 @@ const Sessions: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Clean and prepare data according to backend DTO requirements
       const sessionData: any = {
         title: formData.title.trim(),
         groupeId: parseInt(formData.groupeId),
@@ -296,28 +451,24 @@ const Sessions: React.FC = () => {
         status: formData.status
       };
       
-      // Only add optional fields if they have valid values
-      if (formData.description && formData.description.trim()) {
+            if (formData.description?.trim()) {
         sessionData.description = formData.description.trim();
       }
       
-      // Date field - must be in yyyy-MM-dd format or null/undefined
       if (formData.date && formData.date.trim()) {
-        sessionData.date = formData.date; // HTML date input already gives yyyy-MM-dd format
+        sessionData.date = formData.date;
       }
       
-      // Time fields - must be in HH:mm format or null/undefined
       if (formData.startTime && formData.startTime.trim()) {
-        sessionData.startTime = formData.startTime; // HTML time input already gives HH:mm format
+        sessionData.startTime = formData.startTime;
       }
       
       if (formData.endTime && formData.endTime.trim()) {
-        sessionData.endTime = formData.endTime; // HTML time input already gives HH:mm format
+        sessionData.endTime = formData.endTime;
       }
       
-      // Days array - only if has values
       if (formData.days && formData.days.length > 0) {
-        sessionData.days = formData.days; // Send as array, not comma-separated string
+        sessionData.days = formData.days;
         console.log('🗓️ Days being sent:', sessionData.days);
         console.log('🗓️ Days type:', typeof sessionData.days);
         console.log('🗓️ Days array check:', Array.isArray(sessionData.days));
@@ -325,7 +476,6 @@ const Sessions: React.FC = () => {
         console.log('⚠️ No days selected, omitting from request');
       }
       
-      // Other optional fields
       if (formData.location && formData.location.trim()) {
         sessionData.location = formData.location.trim();
       }
@@ -338,8 +488,8 @@ const Sessions: React.FC = () => {
         sessionData.notes = formData.notes.trim();
       }
 
-      console.log('📤 Sending session data:', sessionData);
-      console.log('📋 Form validation passed with data:', {
+      console.log('Sending session data:', sessionData);
+      console.log('Form validation passed with data:', {
         title: formData.title,
         groupeId: formData.groupeId,
         formateurId: formData.formateurId,
@@ -352,23 +502,22 @@ const Sessions: React.FC = () => {
       });
 
       if (modalMode === 'create') {
-        // 1. POST /api/sessions - إنشاء جلسة جديدة
-        const response = await sessionAPI.create(sessionData);
-        alert('Session created successfully!');
-        console.log('✅ Created session:', response.data);
+        
+        await sessionAPI.create(sessionData);
+        showToast('Session created successfully!', 'success');
       } else {
-        // 4. PUT /api/sessions/{id} - تحديث جلسة موجودة
-        const response = await sessionAPI.update(selectedSession!.id.toString(), sessionData);
-        alert('Session updated successfully!');
-        console.log('✅ Updated session:', response.data);
+        
+        await sessionAPI.update(selectedSession!.id.toString(), sessionData);
+        showToast('Session updated successfully!', 'success');
+        
       }
 
       setIsModalOpen(false);
       await loadSessions();
     } catch (err: any) {
-      console.error('💥 Error saving session:', err);
-      console.error('💥 Error message:', err.message);
-      setError(`Failed to ${modalMode === 'create' ? 'create' : 'update'} session: ${err.message}`);
+      console.error(' Error saving session:', err);
+      console.error(' Error message:', err.message);
+      showToast(`Failed to ${modalMode === 'create' ? 'create' : 'update'} session. Please try again.`, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -378,16 +527,15 @@ const Sessions: React.FC = () => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       
-      // Auto-select trainer when group is selected
       if (field === 'groupeId' && value) {
         const selectedGroup = groupes.find(g => g.id === parseInt(value));
-        console.log('🎯 Selected group:', selectedGroup);
+        console.log('Selected group:', selectedGroup);
         
         if (selectedGroup && selectedGroup.trainerId) {
           newData.formateurId = selectedGroup.trainerId.toString();
-          console.log(`✅ Auto-selected trainer ${selectedGroup.trainerId} (${selectedGroup.trainerName}) for group "${selectedGroup.name}"`);
+          console.log(`Auto-selected trainer ${selectedGroup.trainerId} (${selectedGroup.trainerName}) for group "${selectedGroup.name}"`);
         } else {
-          console.log(`⚠️ Group "${selectedGroup?.name}" has no assigned trainer`);
+          console.log(`Group "${selectedGroup?.name}" has no assigned trainer`);
           newData.formateurId = '';
         }
       }
@@ -477,6 +625,46 @@ const Sessions: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      {/* Add CSS animations */}
+      <style>
+        {`
+          @keyframes slide-in-right {
+            from {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+          
+          .animate-slide-in-right {
+            animation: slide-in-right 0.3s ease-out;
+          }
+        `}
+      </style>
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -807,10 +995,10 @@ const Sessions: React.FC = () => {
                   <select
                     value={formData.formateurId}
                     onChange={(e) => handleInputChange('formateurId', e.target.value)}
-                    className={`w-full px-4 py-3 bg-gray-50 border rounded-lg focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-gray-800 font-medium ${
-                      formErrors.formateurId ? 'border-red-300 focus:border-red-400' : 'border-gray-200'
+                    className={`w-full px-4 py-3 bg-gray-100 border rounded-lg text-gray-600 font-medium cursor-not-allowed ${
+                      formErrors.formateurId ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    disabled={loadingDropdowns}
+                    disabled={true}
                   >
                     <option value="">Select a trainer...</option>
                     {Array.isArray(formateurs) && formateurs.length > 0 ? (
